@@ -13,7 +13,7 @@
         pythonEnv = pkgs.python312.withPackages (
           ps: with ps; [
             numpy
-            scipy
+            matplotlib
           ]
         );
       in
