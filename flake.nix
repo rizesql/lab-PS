@@ -14,6 +14,8 @@
           ps: with ps; [
             numpy
             matplotlib
+            scipy
+            sounddevice
           ]
         );
       in

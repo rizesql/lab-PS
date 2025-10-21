@@ -27,7 +27,7 @@ def game_of_life(src: np.ndarray):
     return next_gen
 
 
-fig, ax = plt.subplots(2, 1, figsize=(8, 4), sharey=True)
+fig, ax = plt.subplots(2, 1, figsize=(4, 8))
 
 gen = np.random.randint(0, 2, size=(16, 16))
 ax[0].set_title("Gen 0")
@@ -38,4 +38,5 @@ ax[1].set_title("Gen 1")
 ax[1].imshow(gen, cmap="binary")
 
 plt.tight_layout()
+plt.savefig("src/01/02f.pdf", format="pdf")
 plt.show()
