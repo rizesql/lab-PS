@@ -9,6 +9,19 @@ def matrix(N: int):
     return np.exp(omega * np.outer(k, n))
 
 
-def transform(sig):
+def dft(sig):
     N = len(sig)
     return matrix(N) @ sig
+
+
+def fft(sig):
+    N = int(sig.size)
+    if N == 1:
+        return sig
+
+    k = np.arange(N // 2)
+    omega = np.exp(-2j * np.pi * k / N)
+
+    even, odd = fft(sig[::2]), fft(sig[1::2])
+
+    return np.concat([even + (omega * odd), even - (omega * odd)])

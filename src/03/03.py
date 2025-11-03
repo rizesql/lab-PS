@@ -18,7 +18,7 @@ t_cont = np.linspace(0, 1.0, 32 * 120, endpoint=False)
 
 
 samples = sig(t_disc)
-ft = fourier.transform(samples)
+ft = fourier.dft(samples)
 assert np.allclose(ft, np.fft.fft(samples))
 
 fig, ax = plt.subplots(1, 2, figsize=(12, 6))

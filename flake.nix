@@ -12,6 +12,7 @@
         pkgs = import inputs.nixpkgs { inherit system; };
         pythonEnv = pkgs.python312.withPackages (
           ps: with ps; [
+            librosa
             numpy
             matplotlib
             scipy
