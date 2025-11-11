@@ -15,6 +15,7 @@
             librosa
             numpy
             matplotlib
+            pandas
             scipy
             sounddevice
           ]
