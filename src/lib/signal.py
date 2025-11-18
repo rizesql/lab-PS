@@ -87,5 +87,31 @@ class Square:
         return f"Square wave(f={self.f}Hz{params})"
 
 
+class Sinc:
+    def __init__(self, B: f32):
+        self.B = B
+
+    def __call__(self, t: np.ndarray):
+        return np.sinc(self.B * t) ** 2
+
+    def __str__(self):
+        return f"$sinc^2$ wave(B={self.B})"
+
+
+class SincInterpolate:
+    def __init__(self, t_samples: np.ndarray, x_samples: np.ndarray, Ts: f32):
+        self.t_samples = t_samples
+        self.x_samples = x_samples
+        self.Ts = Ts
+
+    def __call__(self, t: np.ndarray):
+        arg = (t[None, :] - self.t_samples[:, None]) / self.Ts
+
+        return np.sum(self.x_samples[:, None] * np.sinc(arg), axis=0)
+
+    def __str__(self):
+        return f"Sinc interpolation(Ts={self.Ts:.2f}, N={len(self.x_samples)})"
+
+
 def gamma(sig, noise_sig, snr: f32):
     return np.sqrt(np.linalg.norm(sig) ** 2 / (snr * np.linalg.norm(noise_sig) ** 2))
