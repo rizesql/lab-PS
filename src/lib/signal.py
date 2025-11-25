@@ -115,3 +115,13 @@ class SincInterpolate:
 
 def gamma(sig, noise_sig, snr: f32):
     return np.sqrt(np.linalg.norm(sig) ** 2 / (snr * np.linalg.norm(noise_sig) ** 2))
+
+
+def snr(original: np.ndarray, other: np.ndarray):
+    sig_pow = np.mean(original**2)
+    noise_pow = np.mean((original - other) ** 2)
+
+    if noise_pow == 0:
+        return float("inf")
+
+    return 10 * np.log10(sig_pow / noise_pow)
