@@ -18,6 +18,7 @@
             pandas
             scipy
             sounddevice
+            seaborn
           ]
         );
       in
