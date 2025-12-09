@@ -19,6 +19,7 @@
             scipy
             sounddevice
             seaborn
+            statsmodels
           ]
         );
       in
@@ -28,6 +29,7 @@
             pythonEnv
             pyright
             ruff
+            uv
             nixd
           ];
         };
