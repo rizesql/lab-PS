@@ -1,7 +1,7 @@
 from typing import BinaryIO
 
 import numpy as np
-from numba import jit
+from numba import njit
 
 
 class StreamingBitWriter:
@@ -13,36 +13,14 @@ class StreamingBitWriter:
         self.out_buffer = bytearray()
         self.buffer_size = buffer_size
 
-    def write(self, val: int, nbits: int):
-        self.buf = (self.buf << nbits) | (val & ((1 << nbits) - 1))
-        self.cnt += nbits
-
-        while self.cnt >= 8:
-            self.cnt -= 8
-            byte = (self.buf >> self.cnt) & 0xFF
-
-            self.out_buffer.append(byte)
-
-            if byte == 0xFF:
-                self.out_buffer.append(0x00)
-
-            if len(self.out_buffer) >= self.buffer_size:
-                self._flush_buffer_to_disk()
-
-    def bulk_write(self, instructions: list[tuple[int, int]] | np.ndarray):
-        if len(instructions) == 0:
+    def write(self, data: np.ndarray):
+        if len(data) == 0:
             return
 
         if self.out_buffer:
-            self._flush_buffer_to_disk()
+            self._flush_out_buffer()
 
-        if isinstance(instructions, np.ndarray):
-            data = instructions
-        else:
-            data = np.array(instructions, dtype=np.int64)
-
-        vals = data[:, 0]
-        nbits = data[:, 1]
+        vals, nbits = data[:, 0], data[:, 1]
 
         chunk, self.buf, self.cnt = _pack_bulk_jit(vals, nbits, self.buf, self.cnt)
 
@@ -56,8 +34,8 @@ class StreamingBitWriter:
         if self.cnt > 0:
             pad = 8 - self.cnt
             self.buf = (self.buf << pad) | ((1 << pad) - 1)
-            byte = self.buf & 0xFF
 
+            byte = self.buf & 0xFF
             self.out_buffer.append(byte)
             if byte == 0xFF:
                 self.out_buffer.append(0x00)
@@ -65,15 +43,15 @@ class StreamingBitWriter:
             self.cnt = 0
             self.buf = 0
 
-        self._flush_buffer_to_disk()
+        self._flush_out_buffer()
 
-    def _flush_buffer_to_disk(self):
+    def _flush_out_buffer(self):
         if self.out_buffer:
             self.fp.write(self.out_buffer)
             self.out_buffer.clear()
 
 
-@jit(nopython=True)
+@njit()
 def _pack_bulk_jit(vals, nbits, buf, cnt):
     n_items = len(vals)
 

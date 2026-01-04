@@ -7,10 +7,11 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "ffmpeg-python>=0.2.0",
     "matplotlib>=3.10.7",
     "numba>=0.63.1",
     "numpy>=2.3.5",
-    "pooch>=1.8.2",
+    "opencv-python>=4.11.0.86",
     "scipy>=1.16.3",
     "typer>=0.21.0",
 ]

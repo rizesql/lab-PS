@@ -78,17 +78,14 @@ def compress(img: image.Image[RGB], quality: int = 50, opts: Options = Options()
     )
 
 
-def calc_mse(img: image.Image[RGB], quality: int, opts: Options = Options()) -> float:
+def reconstruct(img: image.Image[RGB], quality: int, opts: Options = Options()) -> image.Image[RGB]:
     H, W = img.shape[:2]
-    logger.info(f"Starting compression for image {W}x{H}")
 
     ycbcr = image.rgb_to_ycbcr(img)
     padded = image.pad(ycbcr, block_size=2 * BLOCK)
-    logger.info("Converted to YCbCr and padded")
 
     Y, Cb, Cr = image.split_chans(padded)
     Cb, Cr = image.subsample(Cb), image.subsample(Cr)
-    logger.info("Chroma subsampling complete")
 
     q_lum, q_lum_inv = transform.scale_q_table(opts.q_lum, quality)
     q_chroma, q_chroma_inv = transform.scale_q_table(opts.q_chroma, quality)
@@ -103,11 +100,17 @@ def calc_mse(img: image.Image[RGB], quality: int, opts: Options = Options()) -> 
 
     Cb, Cr = image.upsample(Cb), image.upsample(Cr)
 
-    restored = image.merge_chans(Y, Cb, Cr)
-    restored = image.ycbcr_to_rgb(restored)
-    restored = restored[:H, :W, :]
+    ret = image.merge_chans(Y, Cb, Cr)
+    ret = image.ycbcr_to_rgb(ret)
+    ret = ret[:H, :W, :].view(image.Image)
 
-    err = np.mean((img.astype(np.float32) - restored.astype(np.float32)) ** 2)
+    return ret  # type: ignore
+
+
+def calc_mse(img: image.Image[RGB], quality: int, opts: Options = Options()) -> float:
+    reconstructed = reconstruct(img, quality, opts)
+
+    err = np.mean((img.astype(np.float32) - reconstructed.astype(np.float32)) ** 2)
     return float(err)
 
 

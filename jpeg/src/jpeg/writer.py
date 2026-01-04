@@ -1,7 +1,7 @@
-import io
 import logging
 import struct
 import time
+import typing
 
 import numpy as np
 
@@ -13,7 +13,7 @@ from jpeg.tables import ZIGZAG_ORDER, QTable
 logger = logging.getLogger(__name__)
 
 
-def to_file(f: io.BufferedWriter, meta: JPEGMeta, data: JPEGData):
+def to_file(f: typing.BinaryIO, meta: JPEGMeta, data: JPEGData):
     _marker(f, 0xD8)
 
     _marker(f, 0xE0)
@@ -27,11 +27,13 @@ def to_file(f: io.BufferedWriter, meta: JPEGMeta, data: JPEGData):
     _dht(f, meta.tables.ac_chroma, 1, 1)
 
     _sos(f)
-    _pack_bitstream(data, StreamingBitWriter(f))
+
+    _pack_bitstream(f, data)
+
     _marker(f, 0xD9)
 
 
-def _marker(f: io.BufferedWriter, marker: int):
+def _marker(f: typing.BinaryIO, marker: int):
     f.write(bytes([0xFF, marker]))
 
 
@@ -39,7 +41,7 @@ def _format_q_table(table: QTable):
     return table.flatten()[ZIGZAG_ORDER].astype(np.uint8).tobytes()
 
 
-def _dqt(f: io.BufferedWriter, q_lum: bytes, q_chroma: bytes):
+def _dqt(f: typing.BinaryIO, q_lum: bytes, q_chroma: bytes):
     _marker(f, 0xDB)
     f.write(struct.pack(">H", 132))
 
@@ -50,7 +52,7 @@ def _dqt(f: io.BufferedWriter, q_lum: bytes, q_chroma: bytes):
     f.write(q_chroma)
 
 
-def _sof(f: io.BufferedWriter, height: int, width: int):
+def _sof(f: typing.BinaryIO, height: int, width: int):
     _marker(f, 0xC0)
 
     f.write(struct.pack(">H", 17))
@@ -61,7 +63,7 @@ def _sof(f: io.BufferedWriter, height: int, width: int):
     f.write(bytes([3, 0x11, 1]))
 
 
-def _dht(f: io.BufferedWriter, bv: BitsVals, t_class: int, t_id: int):
+def _dht(f: typing.BinaryIO, bv: BitsVals, t_class: int, t_id: int):
     _marker(f, 0xC4)
 
     length = 2 + 1 + 16 + len(bv.vals)
@@ -74,7 +76,7 @@ def _dht(f: io.BufferedWriter, bv: BitsVals, t_class: int, t_id: int):
     f.write(bv.vals.tobytes())
 
 
-def _sos(f: io.BufferedWriter):
+def _sos(f: typing.BinaryIO):
     _marker(f, 0xDA)
     f.write(struct.pack(">H", 12))
     f.write(bytes([3]))
@@ -86,7 +88,9 @@ def _sos(f: io.BufferedWriter):
     f.write(bytes([0, 63, 0]))
 
 
-def _pack_bitstream(data: JPEGData, writer: StreamingBitWriter):
+def _pack_bitstream(f: typing.BinaryIO, data: JPEGData):
+    writer = StreamingBitWriter(f)
+
     Y, Cb, Cr = data.Y, data.Cb, data.Cr
 
     buffer: list[np.ndarray] = []
@@ -108,7 +112,7 @@ def _pack_bitstream(data: JPEGData, writer: StreamingBitWriter):
         count += 6
 
         if count >= BATCH_SIZE:
-            writer.bulk_write(np.concatenate(buffer))
+            writer.write(np.concatenate(buffer))
             buffer.clear()
 
             t_end = time.perf_counter()
@@ -118,7 +122,7 @@ def _pack_bitstream(data: JPEGData, writer: StreamingBitWriter):
             t_start = time.perf_counter()
 
     if buffer:
-        writer.bulk_write(np.concatenate(buffer))
+        writer.write(np.concatenate(buffer))
         t_end = time.perf_counter()
         logger.info(f"Processed final batch of {len(buffer)} blocks in {t_end - t_start:.4f}s")
 
