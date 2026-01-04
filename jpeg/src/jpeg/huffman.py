@@ -11,11 +11,11 @@ from jpeg.tables import (
     AC_CHROMA_VALS,
     AC_LUM_BITS,
     AC_LUM_VALS,
-    BLOCK_2D,
     DC_CHROMA_BITS,
     DC_CHROMA_VALS,
     DC_LUM_BITS,
     DC_LUM_VALS,
+    FLAT_BLOCK,
 )
 
 type FlatChan = np.ndarray[tuple[int, int], np.dtype[np.int16]]
@@ -27,15 +27,15 @@ def prepare_mcu_blocks(
     y = _ensure_Y_in_mcu_order(Y)
 
     return (
-        y.reshape(-1, BLOCK_2D),
-        Cb.reshape(-1, BLOCK_2D),
-        Cr.reshape(-1, BLOCK_2D),
+        y.reshape(-1, FLAT_BLOCK),
+        Cb.reshape(-1, FLAT_BLOCK),
+        Cr.reshape(-1, FLAT_BLOCK),
     )
 
 
 def _ensure_Y_in_mcu_order(chan: transform.Chan):
     H, W = chan.shape[:2]
-    ret = chan.reshape(H // 2, 2, W // 2, 2, BLOCK_2D).swapaxes(1, 2)
+    ret = chan.reshape(H // 2, 2, W // 2, 2, FLAT_BLOCK).swapaxes(1, 2)
 
     return ret
 

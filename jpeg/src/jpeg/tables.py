@@ -3,7 +3,8 @@ from typing import Literal
 import numpy as np
 
 BLOCK = 8
-BLOCK_2D = BLOCK * BLOCK
+FLAT_BLOCK = BLOCK * BLOCK
+BLOCK_2D = (BLOCK, BLOCK)
 
 ZIGZAG_ORDER = np.array(
     [
@@ -73,6 +74,8 @@ ZIGZAG_ORDER = np.array(
         63,
     ]
 )
+
+UNZIGZAG_ORDER = np.argsort(ZIGZAG_ORDER)
 
 type QTable = np.ndarray[tuple[Literal[8], Literal[8]], np.dtype[np.float32]]
 

@@ -41,9 +41,17 @@ def split_chans[T](img: Image[T]) -> tuple[Chan[T], Chan[T], Chan[T]]:
     )  # ty:ignore[invalid-return-type]
 
 
+def merge_chans[T](fst: Chan[T], snd: Chan[T], trd: Chan[T]) -> Image[T]:
+    return np.stack([fst, snd, trd], axis=-1).view(Image)  # type: ignore
+
+
 def subsample[T](chan: Chan[T], factor=2) -> Chan[T]:
     H, W = chan.shape
     return chan.reshape(H // factor, factor, W // factor, factor).mean(axis=(1, 3)).astype(np.uint8)
+
+
+def upsample[T](chan: Chan[T], factor=2) -> Chan[T]:
+    return chan.repeat(factor, axis=0).repeat(factor, axis=1).view(Chan)  # type: ignore
 
 
 class Block(
@@ -70,7 +78,7 @@ def blockwise[B: int](img, block_size: B):
     return img.reshape(shape).swapaxes(1, 2)
 
 
-_ycbcr_coeffs = np.array(
+_rgb_to_ycbcr_coeffs = np.array(
     [
         [0.299, -0.168736, 0.5],
         [0.587, -0.331264, -0.418688],
@@ -78,9 +86,25 @@ _ycbcr_coeffs = np.array(
     ],
     dtype=np.float32,
 )
-_ycbcr_shift = np.array([0, 128, 128], dtype=np.float32)
+_rgb_to_ycbcr_shift = np.array([0, 128, 128], dtype=np.float32)
 
 
 def rgb_to_ycbcr(src: Image[RGB]) -> Image[YCbCr]:
-    ret = (src @ _ycbcr_coeffs) + _ycbcr_shift
+    ret = (src @ _rgb_to_ycbcr_coeffs) + _rgb_to_ycbcr_shift
+    return ret.clip(0, 255).astype(np.uint8).view(Image)
+
+
+_ycbcr_to_rgb_coeffs = np.array(
+    [
+        [1, 1, 1],
+        [0, -0.344136, 1.772],
+        [1.402, -0.714136, 0],
+    ],
+    dtype=np.float32,
+)
+_ycbcr_to_rgb_shift = np.array([0, -128, -128], dtype=np.float32)
+
+
+def ycbcr_to_rgb(src: Image[YCbCr]) -> Image[RGB]:
+    ret = (src + _ycbcr_to_rgb_shift) @ _ycbcr_to_rgb_coeffs
     return ret.clip(0, 255).astype(np.uint8).view(Image)
