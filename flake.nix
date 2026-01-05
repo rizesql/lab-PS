@@ -20,6 +20,7 @@
             sounddevice
             seaborn
             statsmodels
+            cvxopt
           ]
         );
       in
@@ -30,6 +31,7 @@
             pyright
             ruff
             uv
+            ty
             nixd
           ];
         };
