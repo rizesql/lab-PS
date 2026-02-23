@@ -1,0 +1,3 @@
+[submodule "proiect"]
+	path = proiect
+	url = https://github.com/rizesql/rzstd
